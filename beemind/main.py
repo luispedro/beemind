@@ -1,4 +1,4 @@
-from time import time
+from time import time, sleep
 import re
 from config import BEEMIND_DATA_FILE, BEEMIND_AUTH_TOKEN
            
@@ -68,6 +68,11 @@ def remove_goal_data(inputf, target):
     fsync_all([inputf + '.tmp'])
     rename(inputf + '.tmp', inputf)
 
+def usage():
+    print("beemind GOAL start")
+    print("beemind GOAL stop")
+    print("beemind GOAL submit")
+    print("beemind GOAL status")
 
 def main(argv):
     now = time()
@@ -86,10 +91,19 @@ def main(argv):
             print('{:16}\t{:.3}'.format(k,tm))
     elif action == 'submit':
         total = parse_files(open(BEEMIND_DATA_FILE))
+        if goal not in total:
+            print("Nothing to do.")
+            return
         total = total[goal]
         total /= 3600
+        print("Submitting {:.4}... (2 seconds to cancel)".format(total))
+        sleep(2)
         post_data(BEEMIND_AUTH_TOKEN, goal, '{:.4}'.format(total), "from command line")
         remove_goal_data(BEEMIND_DATA_FILE, goal)
+    else:
+        from sys import stderr
+        stderr.write("Unknown sub-command: {}\n".format(action))
+        usage()
 
 if __name__ == '__main__':
     from sys import argv
