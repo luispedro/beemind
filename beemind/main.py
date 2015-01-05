@@ -1,6 +1,8 @@
+from .beemind import post_data
 from time import time, sleep
 import re
-from config import BEEMIND_DATA_FILE, BEEMIND_AUTH_TOKEN
+from config import BEEMIND_DATA_FILE, BEEMIND_AUTH_TOKEN, \
+        BEEMIND_INBOX0_SERVER, BEEMIND_INBOX0_USER, BEEMIND_INBOX0_PASSWORD
            
 pat = re.compile(r'^(start|stop) \[(\w+)\]: ([0-9]+\.[0-9]+)$')
 
@@ -24,27 +26,6 @@ def parse_files(inputf):
     for k,v in startp.items():
         total[k] += time() - v
     return dict(total)
-
-def build_post_data(auth_token, goal, value, comment):
-    from urllib.parse import urlencode
-    post_data = {
-            'auth_token': auth_token,
-            'timestamp': round(time()),
-            'value': value,
-            'comment': comment,
-            }
-    params = urlencode(post_data).encode('utf-8')
-    url = 'https://www.beeminder.com/api/v1/users/me/goals/{}/datapoints.json'.format(goal)
-    return url, params
-
-def post_data(auth_token, goal, value, comment):
-    from urllib.request import urlopen
-    import json
-    url, params = build_post_data(auth_token, goal, value, comment)
-    data = urlopen(url, params).readall()
-    output = json.loads(data.decode('utf-8'))
-    print(output)
-    return output
 
 def fsync_all(fnames):
     import os
@@ -100,6 +81,10 @@ def main(argv):
         sleep(2)
         post_data(BEEMIND_AUTH_TOKEN, goal, '{:.4}'.format(total), "from command line")
         remove_goal_data(BEEMIND_DATA_FILE, goal)
+    elif action == 'inbox0':
+        from .check0 import check_inbox0
+        if check_inbox0(BEEMIND_INBOX0_SERVER, BEEMIND_INBOX0_USER, BEEMIND_INBOX0_PASSWORD):
+            post_data(BEEMIND_AUTH_TOKEN, goal, '1', "from command line")
     else:
         from sys import stderr
         stderr.write("Unknown sub-command: {}\n".format(action))
