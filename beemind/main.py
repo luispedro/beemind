@@ -66,7 +66,8 @@ def main(argv):
         with open(BEEMIND_DATA_FILE, 'a+') as output:
             output.write('stop [{}]: {}\n'.format(goal, now))
     elif action == 'status':
-        total = parse_files(open(BEEMIND_DATA_FILE))
+        with open(BEEMIND_DATA_FILE) as ifile:
+            total = parse_files(ifile)
         for k,tm in total.items():
             tm /= 3600.
             print('{:16}\t{:.3}'.format(k,tm))
